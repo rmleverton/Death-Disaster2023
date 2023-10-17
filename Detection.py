@@ -87,12 +87,12 @@ if __name__ =="__main__":
 
         img_w = 2880
         img_h = 1920
-        txt = Image.new("RGBA",(img_w, img_h), (0, 0, 0, 0))
-        edge = Image.new("RGBA",(img_w, img_h), (0, 0, 255, 0))
-        bg = Image.new("RGBA",(img_w, img_h), (255, 0, 0, 255))
+        txt = Image.new("RGBA",(img_w, img_h), (0, 0, 0, 255))
+        edge = Image.new("RGBA",(img_w, img_h), (255, 255, 255, 0))
+        bg = Image.new("RGBA",(img_w, img_h), (10, 10, 10, 255))
         m = Image.fromarray(mask)
 
-        fnt = ImageFont.truetype("fonts/steelfish rg.otf", 40)
+        fnt = ImageFont.truetype("fonts/Domine-Bold.ttf", 60)
 
         d = ImageDraw.Draw(txt)
 
@@ -102,9 +102,14 @@ if __name__ =="__main__":
             
             y = int(object[2] * img_h)
             name = object[0]
-            d.text((x,y), name, fill=(255, 255, 255, 255),font=fnt, align = "center")
+            d.text((x,y), name, fill=(255, 255, 255, 255),font=fnt, align = "right")
         
         buf_m = np.asarray(m)
+        grey_mask = m.convert("L")
+        buf_mask = np.asarray(grey_mask)
+        buf_mask = buf_mask * 0.02
+
+
         grey_txt = txt.convert("L")
         
         buf_t = np.asarray(grey_txt)
@@ -112,20 +117,37 @@ if __name__ =="__main__":
         grey_edge = edge.convert("L")
         buf_e = np.asarray(grey_edge)
 
-        final = buf_m - buf_e#buf_t
-        final = Image.fromarray(final)
-        # final = final.convert("RGBA")
+        final = buf_m - buf_e
+        final = final + buf_mask#buf_t
+
+        btmask = np.where(np.logical_and(final>200, buf_t > 200), 0, 255)
+
+        final = np.where(np.logical_and(final<255, buf_t == 255), 255, final)#final + buf_t
+
+        btf = np.where(btmask==0, 0, final)
+
+        # bt = np.where(np.logical_and(final>200, buf_t > 200), 255, final)
+        # wt = np.where(np.logical_and(final != 255, buf_t == 255), 0, final)
+        #a_mask = np.invert(final)
+        #final = np.abs(final - buf_t)
+        #result = np.where(final == 255,255,np.minimum(final,buf_t))
+        #a_mask = a_mask - buf_t
+        # nmask = final < 0
+        # final[mask] = 255
+        #final = Image.fromarray(final)
+        #final = final.convert("RGBA")
         # print(final.size)
-        # final.show()
+        #final.show()
 
+        cv2.imwrite("outputs/" + imname + ".jpg", btf)
         #a_mask = ImageChops.invert(final.convert("L"))
-        a_mask = final.point(lambda p:p>0, '1')
+        # a_mask = final.point(lambda p:p>0, '1')
 
-        alpha = Image.composite(final, bg, a_mask)
+        # alpha = Image.composite(final, bg, a_mask)
         # alpha.show()
         
-        alpha = Image.alpha_composite(txt, alpha)
-        alpha.show()
+        #alpha = Image.alpha_composite(final, txt)
+        #alpha.show()
         # final += buf_t
         # final = Image.fromarray(final)
         # final.show()
