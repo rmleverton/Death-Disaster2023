@@ -75,21 +75,27 @@ def detect(image):
 if __name__ =="__main__":
     
 
-    for filename in os.listdir("images"):
+    for filename in os.listdir("images/"):
         imname = filename.split('.')[0]
         #detections, plotted = detect("images/" + filename)
         #cv2.imwrite("outputs/" + imname + ".jpg", plotted)
         mask, objects =  detect("images/" + filename)
         #print(objects)
 
+        #mask.transpose(1,2,0)
+        #cv2.imwrite("outputs/" + imname + ".jpg", mask)
+        print(mask.shape)
+        if len(mask.shape) == 2:
+            img_h, img_w = mask.shape
         
-        cv2.imwrite("outputs/" + imname + ".jpg", mask)
-
-        img_w = 2880
-        img_h = 1920
-        txt = Image.new("RGBA",(img_w, img_h), (0, 0, 0, 255))
+        else:
+            mask = mask[:,:,0]
+            print(mask.shape)
+            img_h, img_w = mask.shape
+        #img_h = 1920
+        txt = Image.new("RGBA",(img_w, img_h), (0, 0, 0, 0))
         edge = Image.new("RGBA",(img_w, img_h), (255, 255, 255, 0))
-        bg = Image.new("RGBA",(img_w, img_h), (10, 10, 10, 255))
+        bg = Image.new("RGBA",(img_w, img_h), (30, 30, 30, 255))
         m = Image.fromarray(mask)
 
         fnt = ImageFont.truetype("fonts/Domine-Bold.ttf", 60)
@@ -102,12 +108,12 @@ if __name__ =="__main__":
             
             y = int(object[2] * img_h)
             name = object[0]
-            d.text((x,y), name, fill=(255, 255, 255, 255),font=fnt, align = "right")
+            d.text((x,y), name, fill=(128, 128, 128, 255),font=fnt, align = "right")
         
         buf_m = np.asarray(m)
         grey_mask = m.convert("L")
         buf_mask = np.asarray(grey_mask)
-        buf_mask = buf_mask * 0.02
+        buf_mask = buf_mask * 0.1
 
 
         grey_txt = txt.convert("L")
@@ -120,11 +126,13 @@ if __name__ =="__main__":
         final = buf_m - buf_e
         final = final + buf_mask#buf_t
 
-        btmask = np.where(np.logical_and(final>200, buf_t > 200), 0, 255)
+        #btf = final + buf_t
 
-        final = np.where(np.logical_and(final<255, buf_t == 255), 255, final)#final + buf_t
+        btf = np.where(buf_t == 128, 128, final)
 
-        btf = np.where(btmask==0, 0, final)
+        #final = np.where(np.logical_and(final<255, buf_t == 255), 255, final)#final + buf_t
+
+        #btf = np.where(btmask==0, 0, final)
 
         # bt = np.where(np.logical_and(final>200, buf_t > 200), 255, final)
         # wt = np.where(np.logical_and(final != 255, buf_t == 255), 0, final)
@@ -139,7 +147,7 @@ if __name__ =="__main__":
         # print(final.size)
         #final.show()
 
-        cv2.imwrite("outputs/" + imname + ".jpg", btf)
+        cv2.imwrite("outputs/ukraine/" + imname + ".jpg", btf)
         #a_mask = ImageChops.invert(final.convert("L"))
         # a_mask = final.point(lambda p:p>0, '1')
 
